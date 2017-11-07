@@ -109,15 +109,7 @@ for url_ in tqdm(url_all_seasons):
     
 seasons_stats = pd.concat(seasons_stats)
 seasons_stats.to_csv('season_stats.csv',index=False)
-def add_annotation(g,team_select=None,season_select=None,textxy=None):
-    team_name = team_select
-    print(season_select,team_select)
-    team_idx = np.logical_and((seasons_stats['season'] == season_select) , (seasons_stats['Team'].apply(find_team)))
-    team_idx = seasons_stats[team_idx][['ORtg','DRtg']].values[0]
-    print(team_name,team_idx)
-    g.ax.annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_idx[1]),xytext=(textxy[0],textxy[1]),
-                  arrowprops=dict(facecolor='black', shrink=0.05))
-    return g
+
 
 recoder = {'Western Conference Finals':'Conference Finals',
            'Western Conference Semifinals':'Conference Semifinals',
@@ -144,16 +136,50 @@ g=sns.lmplot(x='ORtg',y='DRtg',data=seasons_stats,hue='playoffs_',fit_reg=False,
 g.set(xlabel='Offense rating',ylabel='Defense rating',title='1955 - 2018 season')
 
 team_select = 'Chicago Bulls'    
-season_select = '1996'    
-g = add_annotation(g,team_select=team_select,season_select=season_select,textxy=[3,-2])
+season_select = '1996'  
+textxy=[3,-2]  
+team_name = team_select
+print(season_select,team_select)
+team_idx = np.logical_and((seasons_stats['season'] == season_select) , (seasons_stats['Team'].apply(find_team)))
+team_idx = seasons_stats[team_idx][['ORtg','DRtg']].values[0]
+print(team_name,team_idx)
+g.fig.axes[0].annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_idx[1]),xytext=(textxy[0],textxy[1]),
+              arrowprops=dict(facecolor='black', shrink=0.05))
+
 
 team_select = 'Golden State Warriors'    
 season_select = '2017'    
-g = add_annotation(g,team_select=team_select,season_select=season_select,textxy=[3,-1.5])
+textxy=[3,-1.5]
+team_name = team_select
+print(season_select,team_select)
+team_idx = np.logical_and((seasons_stats['season'] == season_select) , (seasons_stats['Team'].apply(find_team)))
+team_idx = seasons_stats[team_idx][['ORtg','DRtg']].values[0]
+print(team_name,team_idx)
+g.fig.axes[0].annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_idx[1]),xytext=(textxy[0],textxy[1]),
+              arrowprops=dict(facecolor='black', shrink=0.05))
 
 team_select = 'San Antonio Spurs'    
 season_select = '2014'    
-g = add_annotation(g,team_select=team_select,season_select=season_select,textxy=[-2,-3])
+textxy=[-2,-3]
+team_name = team_select
+print(season_select,team_select)
+team_idx = np.logical_and((seasons_stats['season'] == season_select) , (seasons_stats['Team'].apply(find_team)))
+team_idx = seasons_stats[team_idx][['ORtg','DRtg']].values[0]
+print(team_name,team_idx)
+g.fig.axes[0].annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_idx[1]),xytext=(textxy[0],textxy[1]),
+              arrowprops=dict(facecolor='black', shrink=0.05))
+
+team_select = 'Cleveland Cavaliers'    
+season_select = '2018'    
+textxy=[2,3]
+team_name = team_select
+print(season_select,team_select)
+team_idx = np.logical_and((seasons_stats['season'] == season_select) , (seasons_stats['Team'].apply(find_team)))
+team_idx = seasons_stats[team_idx][['ORtg','DRtg']].values[0]
+print(team_name,team_idx)
+g.fig.axes[0].annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_idx[1]),xytext=(textxy[0],textxy[1]),
+              arrowprops=dict(facecolor='black', shrink=0.05))
+
 g.fig.savefig('D:\\I dont know.png',dpi=400)
 
 
