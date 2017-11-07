@@ -108,13 +108,28 @@ for url_ in tqdm(url_all_seasons):
         seasons_stats.append(df_season)
     
 seasons_stats = pd.concat(seasons_stats)
-orders = list(pd.unique(seasons_stats['playoffs']))
+
+recoder = {'Western Conference Finals':'Conference Finals',
+           'Western Conference Semifinals':'Conference Semifinals',
+           'Western Conference First Round':'First Round',
+           'Eastern Conference Semifinals':'Conference Semifinals',
+           'Eastern Conference Finals':'Conference Finals',
+           'Eastern Conference First Round':'First Round',
+           'Eastern Division Finals':'Conference Finals',
+           'Eastern Division Semifinals':'Conference Semifinals',
+           'Western Division Finals':'Conference Finals',
+           'Western Division Semifinals':'Conference Semifinals',
+           'Finals':'Finals',
+           'no playoffs':'no playoffs',
+           'Eastern Division Third Place Tiebreaker':'Eastern Division Third Place Tiebreaker'}
+seasons_stats['playoffs_'] = seasons_stats['playoffs'].map(recoder)
+orders = list(pd.unique(seasons_stats['playoffs_']))
 orders_ = []
 for ii in orders[1:]:
     orders_.append(ii)
 orders_.append(orders[0])
-sns.lmplot(x='ORtg',y='DRtg',data=seasons_stats,hue='playoffs',fit_reg=False,palette='coolwarm',hue_order=orders_)
-
+g=sns.lmplot(x='ORtg',y='DRtg',data=seasons_stats,hue='playoffs_',fit_reg=False,palette='coolwarm',hue_order=orders_,size=8)
+g.set(xlabel='Offense rating',ylabel='Defense rating',title='1955 - 2018 season')
 
 
     
