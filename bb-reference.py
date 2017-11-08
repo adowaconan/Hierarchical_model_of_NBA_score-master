@@ -130,25 +130,29 @@ for url_ in tqdm(url_all_seasons):
             
         for game,team1,team2 in results_[::-1]:# reverse the list of games because we want to update the teams that play in these games from low level (first round) to high level (Finals)
             team_name = team1 # make the team_name variable and use it globally
-            row_of_team1 = df_season['Team'].apply(find_team)
+            row_of_team1 = df_season['Team'].apply(find_team) # row index of that team in the data of regular season
             team_name = team2
             row_of_team2 = df_season['Team'].apply(find_team)
-            logical_index = np.logical_or(row_of_team1,row_of_team2)
-            df_season['playoffs'][logical_index] = game
-        
+            logical_index = np.logical_or(row_of_team1,row_of_team2) # make a logical or combination of two teams' row index
+            df_season['playoffs'][logical_index] = game # game is a string: could be "first round", "semifinals", "finals"
+        # normalize the offensive and defensive rates within the same season
         df_season['ORtg']=normalize(df_season['ORtg'])
         df_season['DRtg']=normalize(df_season['DRtg'])
+        # save the data of one season
         seasons_stats.append(df_season)
     else:
+        # since in year 2017, season 17-18 has just started, and no team plays more than 20 games,
+        # no team gets into playoffs
         df_season = get_table(url_,)
         df_season['ORtg']=normalize(df_season['ORtg'])
         df_season['DRtg']=normalize(df_season['DRtg'])
         seasons_stats.append(df_season)
     
-seasons_stats = pd.concat(seasons_stats)
-seasons_stats.to_csv('season_stats.csv',index=False)
+seasons_stats = pd.concat(seasons_stats) # join all data of the seasons since 1955 to make a big table
+seasons_stats.to_csv('season_stats.csv',index=False)# save it
 
-seasons_stats = seasons_stats[seasons_stats['Team'] != 'League Average']
+seasons_stats = seasons_stats[seasons_stats['Team'] != 'League Average']# take the rows contain leagure average for each season
+# re-code the strings of the playoffs with simplier classifications
 recoder = {'Western Conference Finals':'Conference Finals',
            'Western Conference Semifinals':'Conference Semifinals',
            'Western Conference First Round':'First Round',
@@ -162,26 +166,34 @@ recoder = {'Western Conference Finals':'Conference Finals',
            'Finals':'Finals',
            'no playoffs':'no playoffs',
            'Eastern Division Third Place Tiebreaker':'Eastern Division Third Place Tiebreaker'}
+# map the re-code
 seasons_stats['playoffs_'] = seasons_stats['playoffs'].map(recoder)
+# a convoluted way to reorder the strings
 orders = list(pd.unique(seasons_stats['playoffs_']))
 orders_ = []
 for ii in orders[1:]:
     orders_.append(ii)
 orders_.append(orders[0])
 
+# make sure no figures in the memory
 plt.close('all')
+# seaborn lmplot: https://seaborn.pydata.org/generated/seaborn.lmplot.html
 g=sns.lmplot(x='ORtg',y='DRtg',data=seasons_stats,hue='playoffs_',fit_reg=False,palette='coolwarm',hue_order=orders_,size=8,
-             x_jitter=None,y_jitter=None)
+             x_jitter=0.01,y_jitter=0.01)
 g.set(xlabel='Offense rating',ylabel='Defense rating',title='1955 - 2018 season')
 
-team_select = 'Chicago Bulls'    
-season_select = '1996'  
-textxy=[3,-2]  
-team_name = team_select
-print(season_select,team_select)
+# add extra annotations to the figure
+team_select = 'Chicago Bulls'   # the name of the team we want to see  
+season_select = '1996'  # the year when the team played in the playoffs
+textxy=[3,-2]  # we could only determine this after we know the coordinates of the team
+team_name = team_select# update global variable "team_name"
+print(season_select,team_select)# print to check
+# a join condition of the team and season, and the join condition should return one True
 team_idx = np.logical_and((seasons_stats['season'] == season_select) , (seasons_stats['Team'].apply(find_team)))
+# I am just lazy to create a new variable to save the values
 team_idx = seasons_stats[team_idx][['ORtg','DRtg']].values[0]
 print(team_name,team_idx)
+# add the annotation to the axes, with an arrow
 g.fig.axes[0].annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_idx[1]),xytext=(textxy[0],textxy[1]),
               arrowprops=dict(facecolor='black', shrink=0.05))
 
@@ -219,7 +231,7 @@ print(team_name,team_idx)
 g.fig.axes[0].annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_idx[1]),xytext=(textxy[0],textxy[1]),
               arrowprops=dict(facecolor='black', shrink=0.05))
 
-g.fig.savefig('D:\\I dont know.png',dpi=400)
+g.fig.savefig('C:\\Users\\ning\\OneDrive\\python works\\NBA project\\Hierarchical_model_of_NBA_score-master\\I dont know.png',dpi=400)
 
 
 
