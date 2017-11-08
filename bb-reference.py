@@ -231,7 +231,7 @@ print(team_name,team_idx)
 g.fig.axes[0].annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_idx[1]),xytext=(textxy[0],textxy[1]),
               arrowprops=dict(facecolor='black', shrink=0.05))
 
-g.fig.savefig('C:\\Users\\ning\\OneDrive\\python works\\NBA project\\Hierarchical_model_of_NBA_score-master\\I dont know.png',dpi=400)
+g.fig.savefig('~\\Hierarchical_model_of_NBA_score-master\\I dont know.png',dpi=400)
 
 
 
