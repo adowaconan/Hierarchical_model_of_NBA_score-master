@@ -59,53 +59,67 @@ def get_table(url_,id_='all_misc_stats',skip_row=1,season=True):
     content_field = [temp for temp in table if (temp != '\n')] # the table variable is a multi-element list, and some of them are only for wrapping to the next line: \n
     content_field = content_field[-1] # the last element of the list is always irrelevant
     parse_to_html = bs(content_field, 'html.parser')# re-parse the strings to a beautifulsoup object
-    for body in parse_to_html('tbody'):# in the beautifulsoup object, we 
+    for body in parse_to_html('tbody'):# in the beautifulsoup object, we unwrap the contents if they are in the table body
         body.unwrap()
-        
+    # for the data of regular season, we skip the first row, which is the name of the table, not the headers
     df = pd.read_html(str(parse_to_html),flavor="bs4",header=skip_row)
-    df = df[0]
+    df = df[0]# for some reason, pandas returns a list
     
     if season:
-        df['playoffs'] = df['Team'].apply(detect_star)
-        df['season'] = re.findall('\d+',url_)[0]
+        df['playoffs'] = df['Team'].apply(detect_star) # for the teams that don't get in the playoffs
+        df['season'] = re.findall('\d+',url_)[0] # this is the year when the playoffs take place
     return df
 def normalize(x):
+    # you don't normalization?
     return (x - x.mean())/x.std()
 url = 'https://www.basketball-reference.com/leagues/'
+# get the page to become a beautifulsoup object for the url above
 soup = bs(urlopen(url),'lxml')
-
+# get the first table, which is also the only table of this web page
 Index_ = soup.find('div',{'id':'content'})
+# get the column "season"
 rows = Index_.findAll('th',{'data-stat':'season'})
+# I don't need the header, or the seasons before 1955
 rows = rows[1:-9]
 url_all_seasons=[]
 for c in rows:
-    j=c.find('a',href=True)
-    season = j['href']
-    url_season = url[:-9] + season
-    url_all_seasons.append(url_season)
-url_all_seasons=[s for s in url_all_seasons if ('NBA' in s)]
+    j=c.find('a',href=True) # get the link url for each season since 1955
+    season = j['href'] # this is the link in string
+    url_season = url[:-9] + season # make a readable url string
+    url_all_seasons.append(url_season)# save the url string for each season since 1955
+url_all_seasons=[s for s in url_all_seasons if ('NBA' in s)]# don't care ABA seasons
 
 seasons_stats = []
 for url_ in tqdm(url_all_seasons):
     if '2018' not in url_:
-        df_season = get_table(url_,)
+        df_season = get_table(url_,) # parse the data of regular season to a data frame
+        # parse the data of the playoffs of the same season to a data frame
         df_playoffs = get_table(url_,id_='all_all_playoffs',skip_row=None,season=False)
+        # the rounds, like first round, semifinals, finals are in the first column
         playoff_rounds = df_playoffs[0]
+        # a complicated way to get rows that contain the names of rounds I want
         k = [f for f in playoff_rounds.to_string().split('\n') if ('Finals' in f) or ('Division' in f) or ('Conference' in f)]
+        # after I use "to_string", the index of the row concatenate to the content and becomes a single string variable,
+        # thus, I need to use the regular expression to match the row indeces
         row_index = [int(re.findall('\d+', strings)[0]) for strings in k]
-        
+        # the teams that play the first round, semifinals, finals
         playoff_teams = df_playoffs[1]
+        # use the row indeces to get the rows of teams matching we need, same as the rows for the games in the next line
         teams = playoff_teams[row_index].to_string().split('\n')
         games = playoff_rounds[row_index]
         results_ = []
         for ii, (game_,teams_) in enumerate(zip(games,teams)):
-            
+            # game_ contains maybe Finals
+            # teams_ contains both sides, and they are seperated by the word: over
             teams_ = [re.findall('\w+',tt) for tt in teams_.split(' over ')]
-            team1 = ' '.join(teams_[0][1:])
+            team1 = ' '.join(teams_[0][1:])# the first element is a number we don't need
             
-            team2 = ' '.join(teams_[1])
+            team2 = ' '.join(teams_[1])# just get the full string for the second team, but we will need further process
             while len(re.findall('\d+',team2)) > 0:
+                # the string variable for the second team contains irregular length of digits
+                # the while loop is to eliminate the digit (if any) one by one
                 team2 = team2[:-2]
+            # handle specially string matching cases
             if 'St ' in team1:
                 team1 = 'St. ' + team1[3:]
             if 'St ' in team2:
@@ -114,8 +128,8 @@ for url_ in tqdm(url_all_seasons):
                 team2 = 'Kansas City-Omaha Kings'
             results_.append([game_,team1,team2])
             
-        for game,team1,team2 in results_[::-1]:
-            team_name = team1
+        for game,team1,team2 in results_[::-1]:# reverse the list of games because we want to update the teams that play in these games from low level (first round) to high level (Finals)
+            team_name = team1 # make the team_name variable and use it globally
             row_of_team1 = df_season['Team'].apply(find_team)
             team_name = team2
             row_of_team2 = df_season['Team'].apply(find_team)
