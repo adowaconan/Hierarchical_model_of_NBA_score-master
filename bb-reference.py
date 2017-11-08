@@ -5,37 +5,61 @@ Created on Tue Nov  7 13:08:09 2017
 @author: ning
 """
 
-from bs4 import BeautifulSoup as bs
-import pandas as pd
+from bs4 import BeautifulSoup as bs # tools to collect xml data
+import pandas as pd # put everything into a table (dataframe)
 import numpy as np
-from urllib.request import urlopen
+from urllib.request import urlopen # open an url
 from matplotlib import pyplot as plt
-import re
-import seaborn as sns
-from tqdm import tqdm
+import re # string matching
+import seaborn as sns # beautiful plotting
+from tqdm import tqdm # to iterate through a counter
 
 
 def detect_star(x):
+    # if there is a star ('*') behind a team's name, it means it went to the 
+    # playoffs that season, otherwise, not.
     if '*' in x:
         return True
     else:
         return 'no playoffs'
 def hasNumbers(inputString):
+    # to check weather a string contains number digits
     return any(char.isdigit() for char in inputString)
 def find_team(x,):
+    # search through the data frame and find the rows that contain the team
+    # name we determine outside this function, which is why the variable 
+    # "team_name" a global variable
     global team_name
-    keyword = re.compile(team_name,re.IGNORECASE)
+    keyword = re.compile(team_name,re.IGNORECASE) # prepare the team's name as a keyword for searching
     if keyword.search(x) is not None:
+        # any match, return true
         return True
     else:
         return False
 def get_table(url_,id_='all_misc_stats',skip_row=1,season=True):
-    soup = bs(urlopen(url_),'lxml')
-    table = soup.find('div',{'id':id_})
-    content_field = [temp for temp in table if (temp != '\n')]
-    content_field = content_field[-1]
-    parse_to_html = bs(content_field, 'html.parser')
-    for body in parse_to_html('tbody'):
+    """
+    Arguments:
+        url_: string of url
+        id_ : html id used in the website
+        skip_row: for some cases, we need to skip the first row, but for the others, we don't
+        season: if true, we are parsing the data of regular season
+                if false, we are parsing the data of playoffs
+                
+    return:
+        df: a data frame contains these columns:
+            'Rk', 'Team', 'Age', 'W', 'L', 'PW', 'PL', 'MOV', 'SOS', 'SRS', 'ORtg',
+       'DRtg', 'Pace', 'FTr', '3PAr', 'TS%', 'eFG%', 'TOV%', 'ORB%', 'FT/FGA',
+       'eFG%.1', 'TOV%.1', 'DRB%', 'FT/FGA.1', 'Arena', 'Attendance',
+       'playoffs', 'season'
+       reference: https://www.basketball-reference.com/leagues/
+    
+    """
+    soup = bs(urlopen(url_),'lxml') # open an url for one season, and parse to beautifulsoup object
+    table = soup.find('div',{'id':id_})# get the table content based on the xml id
+    content_field = [temp for temp in table if (temp != '\n')] # the table variable is a multi-element list, and some of them are only for wrapping to the next line: \n
+    content_field = content_field[-1] # the last element of the list is always irrelevant
+    parse_to_html = bs(content_field, 'html.parser')# re-parse the strings to a beautifulsoup object
+    for body in parse_to_html('tbody'):# in the beautifulsoup object, we 
         body.unwrap()
         
     df = pd.read_html(str(parse_to_html),flavor="bs4",header=skip_row)
@@ -110,7 +134,7 @@ for url_ in tqdm(url_all_seasons):
 seasons_stats = pd.concat(seasons_stats)
 seasons_stats.to_csv('season_stats.csv',index=False)
 
-
+seasons_stats = seasons_stats[seasons_stats['Team'] != 'League Average']
 recoder = {'Western Conference Finals':'Conference Finals',
            'Western Conference Semifinals':'Conference Semifinals',
            'Western Conference First Round':'First Round',
@@ -130,6 +154,7 @@ orders_ = []
 for ii in orders[1:]:
     orders_.append(ii)
 orders_.append(orders[0])
+
 plt.close('all')
 g=sns.lmplot(x='ORtg',y='DRtg',data=seasons_stats,hue='playoffs_',fit_reg=False,palette='coolwarm',hue_order=orders_,size=8,
              x_jitter=None,y_jitter=None)
@@ -171,7 +196,7 @@ g.fig.axes[0].annotate('%s-%s'%(team_select,season_select),xy=(team_idx[0],team_
 
 team_select = 'Cleveland Cavaliers'    
 season_select = '2018'    
-textxy=[2,3]
+textxy=[2,2.5]
 team_name = team_select
 print(season_select,team_select)
 team_idx = np.logical_and((seasons_stats['season'] == season_select) , (seasons_stats['Team'].apply(find_team)))
